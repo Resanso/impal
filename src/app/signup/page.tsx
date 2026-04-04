@@ -17,9 +17,9 @@ export default function SignupPage() {
     setError(null)
     const formData = new FormData(e.currentTarget)
     startTransition(async () => {
-      const result: any = await signup(formData)
+      const result = await signup(formData) as { error?: string; success?: boolean; message?: string } | undefined
       if (result?.error || (result?.success === false && result?.message)) {
-        setError(result?.error || result?.message || 'An error occurred during sign up')
+        setError(result?.error ?? result?.message ?? 'An error occurred during sign up')
       }
     })
   }

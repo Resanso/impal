@@ -2,7 +2,7 @@
 
 import { useTransition, useState } from 'react'
 import Link from 'next/link'
-import { login, signup } from './actions'
+import { login } from './actions'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
 import { Input } from '~/components/ui/input'
@@ -12,14 +12,14 @@ export default function LoginPage() {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   
-  const handleSubmit = (action: typeof login | typeof signup) => (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (action: typeof login) => (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(null)
     const formData = new FormData(e.currentTarget)
     startTransition(async () => {
-      const result: any = await action(formData)
+      const result = await action(formData) as { error?: string; success?: boolean; message?: string } | undefined
       if (result?.error || (result?.success === false && result?.message)) {
-        setError(result?.error || result?.message || 'An error occurred')
+        setError(result?.error ?? result?.message ?? 'An error occurred')
       }
     })
   }
