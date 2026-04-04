@@ -2,9 +2,13 @@ import Link from "next/link";
 
 import { LatestPost } from "~/app/_components/post";
 import { api, HydrateClient } from "~/trpc/server";
+import { createClient } from "~/lib/supabase/server";
+import { LogoutButton } from "~/app/_components/logout-button";
 
 export default async function Home() {
   const hello = await api.post.hello({ text: "from tRPC" });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
   void api.post.getLatest.prefetch();
 
@@ -15,6 +19,32 @@ export default async function Home() {
           <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
             Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
           </h1>
+          <div className="flex flex-col items-center gap-4">
+            {user ? (
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-lg">Logged in as {user.email}</p>
+                <Link href="/booking" className="rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20">
+                  Book a Table
+                </Link>
+                <LogoutButton />
+              </div>
+            ) : (
+              <div className="flex gap-4">
+                <Link
+                  href="/login"
+                  className="rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/signup"
+                  className="rounded-full bg-white/10 px-10 py-3 font-semibold transition hover:bg-white/20"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
             <Link
               className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
