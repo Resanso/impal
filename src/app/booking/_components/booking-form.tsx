@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { cariMeja, getMenuFnB, createBooking } from '../actions'
-import type { Meja, MenuFnB } from '~/types/models'
+import type { MejaWithAvailability, MenuFnB } from '~/types/models'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -31,6 +31,7 @@ function hitungBiaya(tarif: number, durasi: number, cart: CartItem[]) {
 
 interface CartItem { menu: MenuFnB; qty: number }
 type Step = 'jadwal' | 'meja' | 'fnb' | 'ringkasan'
+type Meja = MejaWithAvailability
 
 const DURASI_OPTIONS = [30, 60, 90, 120, 180]
 
@@ -62,6 +63,22 @@ function StepIndicator({ step }: { step: Step }) {
 }
 
 function MejaCard({ meja, selected, onClick }: { meja: Meja; selected: boolean; onClick: () => void }) {
+  if (!meja.tersedia) {
+    const selesai = meja.terpakaiSampai
+      ? new Date(meja.terpakaiSampai).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+      : '—'
+    return (
+      <div className="w-full rounded-xl border-2 border-dashed border-border bg-muted/30 p-4 opacity-60">
+        <div className="flex items-center gap-2">
+          <MapPin className="size-4 text-muted-foreground" />
+          <span className="font-semibold text-muted-foreground">Meja #{meja.mejaID}</span>
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">{idr(meja.tarif)} / jam</p>
+        <p className="mt-1.5 text-xs font-medium text-orange-600">Terpakai s/d pukul {selesai}</p>
+      </div>
+    )
+  }
+
   return (
     <button
       onClick={onClick}
@@ -117,8 +134,8 @@ export function BookingForm({ userID }: { userID: string }) {
   const [durasi, setDurasi] = useState(60)
 
   // Step 2 — Meja
-  const [mejaDiTemukan, setMejaDiTemukan] = useState<Meja[]>([])
-  const [selectedMeja, setSelectedMeja] = useState<Meja | null>(null)
+  const [mejaDiTemukan, setMejaDiTemukan] = useState<MejaWithAvailability[]>([])
+  const [selectedMeja, setSelectedMeja] = useState<MejaWithAvailability | null>(null)
 
   // Step 3 — F&B
   const [menuList, setMenuList] = useState<MenuFnB[]>([])
@@ -137,7 +154,8 @@ export function BookingForm({ userID }: { userID: string }) {
     })
   }
 
-  function handlePilihMeja(meja: Meja) {
+  function handlePilihMeja(meja: MejaWithAvailability) {
+    if (!meja.tersedia) return
     setSelectedMeja(meja)
     setError(null)
     startTransition(async () => {

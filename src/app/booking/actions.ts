@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '~/lib/supabase/server'
-import type { Meja, MenuFnB } from '~/types/models'
+import type { Meja, MejaWithAvailability, MenuFnB } from '~/types/models'
 
 export interface BookingDetailRow {
   id: number
@@ -24,41 +24,46 @@ export async function cariMeja(
   tanggal: string,    // 'YYYY-MM-DD'
   waktuMulai: string, // 'HH:MM'
   durasi: number      // minutes
-): Promise<{ data: Meja[] | null; error: string | null }> {
+): Promise<{ data: MejaWithAvailability[] | null; error: string | null }> {
   try {
     const supabase = await createClient()
 
     const start = new Date(`${tanggal}T${waktuMulai}:00`)
     const end = new Date(start.getTime() + durasi * 60 * 1000)
 
-    // Temukan meja yang sedang dipakai di rentang waktu yang diminta
-    const { data: conflicts } = await supabase
-      .from('pemesanan')
-      .select('meja_id')
-      .neq('status_pembayaran', 'Batal')
-      .lt('waktu_mulai', end.toISOString())
-      .gt('waktu_selesai', start.toISOString())
+    // Ambil semua meja (kecuali Maintenance) dan booking yang konflik secara paralel
+    const [mejaRes, conflictRes] = await Promise.all([
+      supabase
+        .from('meja')
+        .select('id, status, tarif')
+        .neq('status', 'Maintenance')
+        .order('id'),
+      supabase
+        .from('pemesanan')
+        .select('meja_id, waktu_selesai')
+        .neq('status_pembayaran', 'Batal')
+        .lt('waktu_mulai', end.toISOString())
+        .gt('waktu_selesai', start.toISOString()),
+    ])
 
-    const occupiedIds = (conflicts ?? []).map((b: { meja_id: number }) => b.meja_id)
+    if (mejaRes.error) return { data: null, error: mejaRes.error.message }
 
-    let query = supabase
-      .from('meja')
-      .select('id, status, tarif')
-      .eq('status', 'Tersedia')
-      .order('id')
-
-    if (occupiedIds.length > 0) {
-      query = query.not('id', 'in', `(${occupiedIds.join(',')})`)
+    // Map meja_id → waktu_selesai terlama dari semua booking yang konflik
+    const conflictMap = new Map<number, string>()
+    for (const c of (conflictRes.data ?? []) as { meja_id: number; waktu_selesai: string }[]) {
+      const existing = conflictMap.get(c.meja_id)
+      if (!existing || c.waktu_selesai > existing) {
+        conflictMap.set(c.meja_id, c.waktu_selesai)
+      }
     }
 
-    const { data, error } = await query
-    if (error) return { data: null, error: error.message }
-
     return {
-      data: (data ?? []).map((row: { id: number; status: string; tarif: number }) => ({
+      data: (mejaRes.data ?? []).map((row: { id: number; status: string; tarif: number }) => ({
         mejaID: row.id,
         status: row.status as Meja['status'],
         tarif: row.tarif,
+        tersedia: !conflictMap.has(row.id),
+        terpakaiSampai: conflictMap.get(row.id),
       })),
       error: null,
     }

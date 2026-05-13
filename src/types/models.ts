@@ -26,6 +26,11 @@ export interface DetailBooking {
   durasi: number;
 }
 
+export interface MejaWithAvailability extends Meja {
+  tersedia: boolean
+  terpakaiSampai?: string // ISO string waktu_selesai dari booking yang konflik
+}
+
 export interface MenuFnB {
   menuID: number;
   nama: string;
