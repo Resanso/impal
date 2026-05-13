@@ -26,11 +26,19 @@ export interface DetailBooking {
   durasi: number;
 }
 
+export interface MenuFnB {
+  menuID: number;
+  nama: string;
+  harga: number;
+  stok: number;
+  kategori: 'Makanan' | 'Minuman';
+}
+
 export interface Pemesanan {
   pemesananID: number;
   statusPembayaran: string;
   totalTagihan: number;
-  
+
   // Composition Relasi
   listItemPenjualan: ItemPenjualan[];
   detailBooking: DetailBooking;
