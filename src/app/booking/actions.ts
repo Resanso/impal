@@ -153,12 +153,6 @@ export async function createBooking(
       if (detailError) return { success: false, error: detailError.message }
     }
 
-    // Update status meja jadi Terpakai
-    await supabase
-      .from('meja')
-      .update({ status: 'Terpakai' })
-      .eq('id', mejaID)
-
     return { success: true, pemesananID: booking.id as number }
   } catch (err) {
     return { success: false, error: String(err) }
