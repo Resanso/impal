@@ -141,9 +141,26 @@ export function BookingForm({ userID }: { userID: string }) {
   const [menuList, setMenuList] = useState<MenuFnB[]>([])
   const [cart, setCart] = useState<CartItem[]>([])
 
+  // ── Validation ───────────────────────────────────────────────────────────
+
+  function validateJadwal(): string | null {
+    if (!tanggal) return 'Tanggal harus dipilih'
+    if (new Date(`${tanggal}T00:00`) < new Date(new Date().toDateString()))
+      return 'Tanggal tidak boleh di masa lalu'
+    if (!waktu) return 'Waktu mulai harus diisi'
+    const [h, m] = waktu.split(':').map(Number)
+    const menitSelesai = (h ?? 0) * 60 + (m ?? 0) + durasi
+    if (menitSelesai > 24 * 60)
+      return `Waktu selesai (${addMinutes(waktu, durasi)}) melewati tengah malam, kurangi durasi atau ubah waktu mulai`
+    return null
+  }
+
   // ── Handlers ────────────────────────────────────────────────────────────
 
   function handleCariMeja() {
+    const validationError = validateJadwal()
+    if (validationError) { setError(validationError); return }
+
     setError(null)
     startTransition(async () => {
       const result = await cariMeja(tanggal, waktu, durasi)

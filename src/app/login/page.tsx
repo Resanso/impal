@@ -8,64 +8,84 @@ import { Label } from '~/components/ui/label'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 
+function validateLogin(email: string, password: string): string | null {
+  if (!email.trim()) return 'Email tidak boleh kosong'
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Format email tidak valid'
+  if (!password) return 'Password tidak boleh kosong'
+  if (password.length < 6) return 'Password minimal 6 karakter'
+  return null
+}
+
 export default function LoginPage() {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
-  
-  const handleSubmit = (action: typeof login) => (e: React.FormEvent<HTMLFormElement>) => {
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setError(null)
     const formData = new FormData(e.currentTarget)
+    const email    = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    const validationError = validateLogin(email, password)
+    if (validationError) { setError(validationError); return }
+
+    setError(null)
     startTransition(async () => {
-      const result = await action(formData) as { error?: string; success?: boolean; message?: string } | undefined
-      if (result?.error || (result?.success === false && result?.message)) {
-        setError(result?.error ?? result?.message ?? 'An error occurred')
+      const result = await login(formData) as { success?: boolean; message?: string } | undefined
+      if (result?.success === false) {
+        setError(result.message ?? 'Email atau password salah')
       }
     })
   }
 
   return (
-    <div className="flex h-screen w-full items-center justify-center px-4">
-      <Card className="max-w-sm w-full mx-auto">
+    <div className="flex min-h-screen w-full items-center justify-center px-4">
+      <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">Authentication</CardTitle>
-          <CardDescription>
-            Enter your email below to login or create a new account
-          </CardDescription>
+          <CardTitle className="text-2xl">Masuk ke 8BPOS</CardTitle>
+          <CardDescription>Masukkan email dan password kamu</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-4">
-            <form id="auth-form" className="flex flex-col gap-4" onSubmit={handleSubmit(login)}>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" name="password" type="password" required />
-              </div>
-              {error && (
-                <div className="text-sm text-red-500 font-medium">{error}</div>
-              )}
-              <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending ? 'Processing...' : 'Login'}
-              </Button>
-            </form>
-          </div>
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
+            <div className="grid gap-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="contoh@email.com"
+                autoComplete="email"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Min. 6 karakter"
+                autoComplete="current-password"
+              />
+            </div>
+
+            {error && (
+              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </p>
+            )}
+
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending ? 'Memproses...' : 'Masuk'}
+            </Button>
+          </form>
         </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <div className="text-center text-sm text-muted-foreground w-full">
-            Don&apos;t have an account?{' '}
+        <CardFooter>
+          <p className="w-full text-center text-sm text-muted-foreground">
+            Belum punya akun?{' '}
             <Link href="/signup" className="underline underline-offset-4 hover:text-primary">
-              Sign up
+              Daftar
             </Link>
-          </div>
+          </p>
         </CardFooter>
       </Card>
     </div>

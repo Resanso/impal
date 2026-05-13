@@ -34,12 +34,31 @@ export function PaymentForm({ pemesananID, defaultEmail, existingLink }: Payment
     )
   }
 
+  function validateForm(): string | null {
+    const n = nama.trim()
+    if (!n) return 'Nama tidak boleh kosong'
+    if (n.length < 2) return 'Nama minimal 2 karakter'
+    if (!/^[a-zA-Z\s]+$/.test(n)) return 'Nama hanya boleh berisi huruf'
+
+    const m = mobile.trim()
+    if (!m) return 'No. WhatsApp tidak boleh kosong'
+    if (!/^[\d+]/.test(m)) return 'No. WhatsApp hanya boleh berisi angka'
+    const digitsOnly = m.replace(/\D/g, '')
+    if (digitsOnly.length < 10) return 'No. WhatsApp tidak valid (min. 10 digit)'
+    if (digitsOnly.length > 15) return 'No. WhatsApp tidak valid (maks. 15 digit)'
+    if (!m.startsWith('08') && !m.startsWith('+62') && !m.startsWith('62'))
+      return 'Masukkan nomor Indonesia yang valid (berawalan 08 atau +62)'
+    return null
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
+    const validationError = validateForm()
+    if (validationError) { setError(validationError); return }
 
+    setError(null)
     startTransition(async () => {
-      const result = await createMayarInvoice(pemesananID, nama, mobile)
+      const result = await createMayarInvoice(pemesananID, nama.trim(), mobile.trim())
       if (result.error) {
         setError(result.error)
         return
