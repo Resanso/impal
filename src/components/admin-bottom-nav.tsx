@@ -2,23 +2,20 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, CalendarPlus, History, User, Coffee } from 'lucide-react'
+import { Coffee, CalendarDays } from 'lucide-react'
 
-const NAV_ITEMS = [
-  { href: '/',        icon: Home,        label: 'Beranda'  },
-  { href: '/booking', icon: CalendarPlus, label: 'Booking'  },
-  { href: '/fnb',     icon: Coffee,      label: 'FNB'      },
-  { href: '/riwayat', icon: History,     label: 'Riwayat'  },
-  { href: '/profil',  icon: User,        label: 'Profil'   },
+const ADMIN_NAV_ITEMS = [
+  { href: '/admin/fnb',     icon: Coffee,       label: 'Kelola FNB'  },
+  { href: '/admin/booking', icon: CalendarDays,  label: 'Kelola Booking' },
 ]
 
-export function BottomNav() {
+export function AdminBottomNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 border-t bg-background md:hidden">
-      {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
-        const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 border-t bg-background md:hidden shadow-lg shadow-black/5">
+      {ADMIN_NAV_ITEMS.map(({ href, icon: Icon, label }) => {
+        const active = pathname.startsWith(href)
         return (
           <Link
             key={href}

@@ -70,6 +70,7 @@ export async function getPaymentPageData(pemesananID: number) {
   return {
     data: {
       booking: booking as unknown as PaymentBookingDetail,
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       existingPayment: rawPayment as unknown as PaymentRow | null,
       userEmail: user.email ?? '',
     },
@@ -95,6 +96,7 @@ export async function createMayarInvoice(
     .single()
 
   if (bookingError || !rawBooking) return { link: null, error: 'Booking tidak ditemukan' }
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   const booking = rawBooking as unknown as InvoiceBookingRow
   if (booking.status_pembayaran === 'Lunas') return { link: null, error: 'Booking sudah lunas' }
 
@@ -106,6 +108,7 @@ export async function createMayarInvoice(
     .eq('status', 'pending')
     .maybeSingle()
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   const existing = rawExisting as unknown as { mayar_link: string | null } | null
   if (existing?.mayar_link) return { link: existing.mayar_link, error: null }
 

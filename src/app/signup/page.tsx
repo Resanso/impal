@@ -72,6 +72,19 @@ export default function SignupPage() {
                 autoComplete="new-password"
               />
             </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="role">Daftar Sebagai</Label>
+              <select
+                id="role"
+                name="role"
+                defaultValue="user"
+                disabled={isPending}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="user">Pelanggan (User)</option>
+                <option value="admin">Staf/Admin</option>
+              </select>
+            </div>
 
             {error && (
               <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">

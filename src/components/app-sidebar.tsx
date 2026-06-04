@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, CalendarPlus, History, User, Layers } from 'lucide-react'
+import { Home, CalendarPlus, History, User, Layers, Coffee } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -20,6 +20,7 @@ import { Button } from '~/components/ui/button'
 const NAV_ITEMS = [
   { href: '/',        icon: Home,        label: 'Beranda'      },
   { href: '/booking', icon: CalendarPlus, label: 'Booking Baru' },
+  { href: '/fnb',     icon: Coffee,      label: 'FNB'          },
   { href: '/riwayat', icon: History,     label: 'Riwayat'      },
   { href: '/profil',  icon: User,        label: 'Profil'       },
 ]
