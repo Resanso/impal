@@ -4,12 +4,19 @@ import { createClient } from '~/lib/supabase/server'
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
+  const token_hash = requestUrl.searchParams.get('token_hash')
+  const type = requestUrl.searchParams.get('type')
+  const next = requestUrl.searchParams.get('next') ?? '/'
+
+  const redirectTo = new URL(next, requestUrl.origin)
+
+  const supabase = await createClient()
 
   if (code) {
-    const supabase = await createClient()
     await supabase.auth.exchangeCodeForSession(code)
+  } else if (token_hash && type) {
+    await supabase.auth.verifyOtp({ token_hash, type: type as 'email' | 'signup' | 'recovery' | 'invite' | 'magiclink' | 'email_change' })
   }
 
-  // URL to redirect to after sign in process completes
-  return NextResponse.redirect(requestUrl.origin)
+  return NextResponse.redirect(redirectTo)
 }
