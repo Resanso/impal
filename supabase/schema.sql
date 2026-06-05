@@ -3,8 +3,8 @@
 -- Jalankan di Supabase SQL Editor (Dashboard > SQL Editor)
 -- ============================================================
 
--- 0. Tabel profiles (untuk mensinkronkan metadata user & role dari Supabase Auth)
-create table if not exists public.profiles (
+-- 0. Tabel users (untuk menyimpan data pengguna)
+create table if not exists public.users (
   id         uuid references auth.users(id) on delete cascade primary key,
   email      text not null,
   role       text not null default 'user',  -- 'user' | 'admin'
@@ -117,18 +117,19 @@ create policy "pemesanan_detail_delete" on pemesanan_detail for delete using (
 );
 
 -- RLS untuk tabel profiles
-alter table profiles enable row level security;
+-- RLS untuk tabel users
+alter table users enable row level security;
 
-create policy "profiles_select" on profiles for select using (true);
-create policy "profiles_insert" on profiles for insert with check (true);
-create policy "profiles_update" on profiles for update using (auth.uid() = id);
-create policy "profiles_delete" on profiles for delete using (coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin');
+create policy "users_select" on users for select using (true);
+create policy "users_insert" on users for insert with check (true);
+create policy "users_update" on users for update using (auth.uid() = id);
+create policy "users_delete" on users for delete using (coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin');
 
--- Trigger untuk sinkronisasi otomatis dari auth.users ke public.profiles
+-- Trigger untuk sinkronisasi otomatis dari auth.users ke public.users
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, email, role)
+  insert into public.users (id, email, role)
   values (
     new.id,
     new.email,
@@ -145,8 +146,8 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
--- Migrasikan data user yang sudah ada sebelumnya (jika ada) ke tabel profiles
-insert into public.profiles (id, email, role)
+-- Migrasikan data user yang sudah ada sebelumnya (jika ada) ke tabel users
+insert into public.users (id, email, role)
 select id, email, coalesce(raw_user_meta_data->>'role', 'user')
 from auth.users
 on conflict (id) do nothing;
