@@ -1,7 +1,7 @@
 import Link from 'next/link'
-import { CalendarPlus, Clock, CheckCircle, XCircle, ChevronRight } from 'lucide-react'
+import { CalendarPlus, Clock, CheckCircle, XCircle, ChevronRight, LayoutDashboard, History, User, Wallet } from 'lucide-react'
 import { createClient } from '~/lib/supabase/server'
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
+import { Card, CardContent } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
 
 const idr = (n: number) =>
@@ -51,36 +51,46 @@ export default async function DashboardPage() {
     <div className="container mx-auto max-w-2xl px-4 py-8">
 
       {/* Greeting */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">{greeting}! 👋</h1>
-        <p className="text-muted-foreground">{user?.email}</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground/90">
+            {greeting}, <span className="text-primary">{user?.email?.split('@')[0]}</span>! 👋
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">Sistem billing biliar cerdas Anda.</p>
+        </div>
+        <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+          <User className="size-6" />
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="mb-6 grid grid-cols-3 gap-3">
-        <Card size="sm">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold">{totalBooking}</p>
-            <p className="text-xs text-muted-foreground">Total Booking</p>
+      <div className="mb-8 grid grid-cols-3 gap-4">
+        <Card size="sm" className="border-none bg-blue-50/50 dark:bg-blue-900/10 ring-0 shadow-sm">
+          <CardContent className="p-4 flex flex-col items-center gap-1">
+            <LayoutDashboard className="size-4 text-blue-600 mb-1" />
+            <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{totalBooking}</p>
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-blue-600/70">Total</p>
           </CardContent>
         </Card>
-        <Card size="sm">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-yellow-600">{aktif}</p>
-            <p className="text-xs text-muted-foreground">Menunggu Bayar</p>
+        <Card size="sm" className="border-none bg-amber-50/50 dark:bg-amber-900/10 ring-0 shadow-sm">
+          <CardContent className="p-4 flex flex-col items-center gap-1">
+            <Wallet className="size-4 text-amber-600 mb-1" />
+            <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{aktif}</p>
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-amber-600/70">Pending</p>
           </CardContent>
         </Card>
-        <Card size="sm">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-green-600">{selesai}</p>
-            <p className="text-xs text-muted-foreground">Lunas</p>
+        <Card size="sm" className="border-none bg-emerald-50/50 dark:bg-emerald-900/10 ring-0 shadow-sm">
+          <CardContent className="p-4 flex flex-col items-center gap-1">
+            <CheckCircle className="size-4 text-emerald-600 mb-1" />
+            <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{selesai}</p>
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-emerald-600/70">Lunas</p>
           </CardContent>
         </Card>
       </div>
 
       {/* CTA */}
       <Link href="/booking">
-        <Button className="mb-8 w-full" size="lg">
+        <Button className="mb-10 w-full shadow-lg shadow-primary/20 bg-gradient-to-r from-primary to-primary/80 hover:to-primary" size="lg">
           <CalendarPlus className="mr-2 size-5" />
           Booking Meja Baru
         </Button>
@@ -88,15 +98,21 @@ export default async function DashboardPage() {
 
       {/* Recent Bookings */}
       <div>
-        <h2 className="mb-3 text-base font-semibold">Riwayat Terakhir</h2>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-bold tracking-tight">Riwayat Terakhir</h2>
+          <Link href="/riwayat" className="text-xs font-medium text-primary hover:underline">Lihat semua</Link>
+        </div>
         {rows.length === 0 ? (
-          <Card>
-            <CardContent className="py-10 text-center text-sm text-muted-foreground">
-              Belum ada booking. Yuk mulai booking meja!
+          <Card className="border-dashed ring-0 bg-muted/20">
+            <CardContent className="py-12 text-center">
+              <History className="size-10 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground font-medium">
+                Belum ada booking. Yuk mulai booking meja!
+              </p>
             </CardContent>
           </Card>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             {rows.map(booking => {
               const statusKey = booking.status_pembayaran as keyof typeof STATUS_CONFIG
               const status = STATUS_CONFIG[statusKey] ?? STATUS_CONFIG.Pending
@@ -104,24 +120,29 @@ export default async function DashboardPage() {
               const waktu = new Date(booking.waktu_mulai)
               return (
                 <Link key={booking.id} href={`/booking/${booking.id}`}>
-                  <Card className="transition-colors hover:bg-muted/50">
-                    <CardContent className="flex items-center gap-3 py-3">
+                  <Card className="transition-all hover:ring-primary/30 hover:bg-muted/30 border-none ring-1 ring-foreground/5 shadow-sm">
+                    <CardContent className="flex items-center gap-4 py-4">
+                      <div className="size-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                        <span className="font-bold text-sm text-muted-foreground">#{booking.meja?.id}</span>
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">Meja #{booking.meja?.id}</p>
-                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${status.className}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-semibold text-sm">Meja {booking.meja?.id}</p>
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${status.className} bg-opacity-10`}>
                             <StatusIcon className="size-3" />
                             {status.label}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          {waktu.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
-                          {' · '}{booking.durasi} menit
+                          {waktu.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' })}
+                          {' • '}{booking.durasi} menit
                         </p>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <p className="text-sm font-semibold">{idr(booking.total_tagihan)}</p>
-                        <ChevronRight className="size-4 text-muted-foreground" />
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-foreground">{idr(booking.total_tagihan)}</p>
+                        </div>
+                        <ChevronRight className="size-4 text-muted-foreground/50" />
                       </div>
                     </CardContent>
                   </Card>

@@ -3,6 +3,14 @@
 -- Jalankan di Supabase SQL Editor (Dashboard > SQL Editor)
 -- ============================================================
 
+-- 0. Tabel users (untuk menyimpan data pengguna)
+create table if not exists public.users (
+  id         uuid references auth.users(id) on delete cascade primary key,
+  email      text not null,
+  role       text not null default 'user',  -- 'user' | 'admin'
+  created_at timestamptz default now()
+);
+
 -- 1. Tabel meja
 create table if not exists meja (
   id     serial primary key,
@@ -42,7 +50,7 @@ create table if not exists pemesanan_detail (
 );
 
 -- ============================================================
--- Row Level Security
+-- Row Level Security & Policies
 -- ============================================================
 
 alter table meja enable row level security;
@@ -50,25 +58,99 @@ alter table menu_fnb enable row level security;
 alter table pemesanan enable row level security;
 alter table pemesanan_detail enable row level security;
 
--- meja: semua orang bisa baca, user terautentikasi bisa update status
+-- meja: semua orang bisa baca, admin bisa insert/update/delete, user bisa update status saat booking
 create policy "meja_select" on meja for select using (true);
-create policy "meja_update" on meja for update to authenticated using (true);
+create policy "meja_insert" on meja for insert with check (coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin');
+create policy "meja_update" on meja for update using (
+  (coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin') OR (status = 'Tersedia' OR status = 'Terpakai')
+);
+create policy "meja_delete" on meja for delete using (coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin');
 
--- menu_fnb: semua orang bisa baca
+-- menu_fnb: semua orang bisa baca, admin bisa insert/update/delete
 create policy "menu_fnb_select" on menu_fnb for select using (true);
-create policy "menu_fnb_update" on menu_fnb for update to authenticated using (true);
+create policy "menu_fnb_insert" on menu_fnb for insert with check (coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin');
+create policy "menu_fnb_update" on menu_fnb for update using (coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin');
+create policy "menu_fnb_delete" on menu_fnb for delete using (coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin');
 
--- pemesanan: user hanya bisa akses miliknya sendiri
-create policy "pemesanan_select" on pemesanan for select using (auth.uid() = user_id);
-create policy "pemesanan_insert" on pemesanan for insert with check (auth.uid() = user_id);
+-- pemesanan: user hanya bisa akses miliknya sendiri, admin bisa akses semuanya
+create policy "pemesanan_select" on pemesanan for select using (
+  (auth.uid() = user_id) OR (coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin')
+);
+create policy "pemesanan_insert" on pemesanan for insert with check (
+  (auth.uid() = user_id) OR (coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin')
+);
+create policy "pemesanan_update" on pemesanan for update using (
+  (auth.uid() = user_id) OR (coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin')
+);
+create policy "pemesanan_delete" on pemesanan for delete using (
+  coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin'
+);
 
--- pemesanan_detail: user bisa akses jika dia pemilik pemesanannya
+-- pemesanan_detail: user bisa akses jika dia pemilik pemesanannya, admin bisa akses semuanya
 create policy "pemesanan_detail_select" on pemesanan_detail for select using (
-  exists (select 1 from pemesanan p where p.id = pemesanan_id and p.user_id = auth.uid())
+  exists (
+    select 1 from pemesanan p 
+    where p.id = pemesanan_id 
+    and (p.user_id = auth.uid() or coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin')
+  )
 );
 create policy "pemesanan_detail_insert" on pemesanan_detail for insert with check (
-  exists (select 1 from pemesanan p where p.id = pemesanan_id and p.user_id = auth.uid())
+  exists (
+    select 1 from pemesanan p 
+    where p.id = pemesanan_id 
+    and (p.user_id = auth.uid() or coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin')
+  )
 );
+create policy "pemesanan_detail_update" on pemesanan_detail for update using (
+  exists (
+    select 1 from pemesanan p 
+    where p.id = pemesanan_id 
+    and (p.user_id = auth.uid() or coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin')
+  )
+);
+create policy "pemesanan_detail_delete" on pemesanan_detail for delete using (
+  exists (
+    select 1 from pemesanan p 
+    where p.id = pemesanan_id 
+    and (p.user_id = auth.uid() or coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin')
+  )
+);
+
+-- RLS untuk tabel profiles
+-- RLS untuk tabel users
+alter table users enable row level security;
+
+create policy "users_select" on users for select using (true);
+create policy "users_insert" on users for insert with check (true);
+create policy "users_update" on users for update using (auth.uid() = id);
+create policy "users_delete" on users for delete using (coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'user') = 'admin');
+
+-- Trigger untuk sinkronisasi otomatis dari auth.users ke public.users
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.users (id, email, role)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'role', 'user')
+  );
+  return new;
+end;
+$$ language plpgsql security definer;
+
+-- Drop trigger jika sudah ada sebelumnya
+drop trigger if exists on_auth_user_created on auth.users;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+-- Migrasikan data user yang sudah ada sebelumnya (jika ada) ke tabel users
+insert into public.users (id, email, role)
+select id, email, coalesce(raw_user_meta_data->>'role', 'user')
+from auth.users
+on conflict (id) do nothing;
 
 -- ============================================================
 -- Seed Data

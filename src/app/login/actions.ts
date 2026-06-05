@@ -7,33 +7,41 @@ import { createClient } from '~/lib/supabase/server'
 export async function login(formData: FormData) {
   const supabase = await createClient()
 
-  const data = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
-  }
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
 
-  const { error } = await supabase.auth.signInWithPassword(data)
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
     return { success: false, message: error.message }
   }
 
+  const role = data.user?.user_metadata?.role || 'user'
+
   revalidatePath('/', 'layout')
-  redirect('/')
+  
+  if (role === 'admin') {
+    redirect('/admin/fnb')
+  } else {
+    redirect('/')
+  }
 }
 
 export async function signup(formData: FormData) {
   const supabase = await createClient()
 
-  const data = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
-  }
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
+  const role = formData.get('role') as string || 'user'
 
   const { error } = await supabase.auth.signUp({
-    ...data,
+    email,
+    password,
     options: {
       emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+      data: {
+        role,
+      },
     },
   })
 
@@ -42,7 +50,12 @@ export async function signup(formData: FormData) {
   }
 
   revalidatePath('/', 'layout')
-  redirect('/')
+  
+  if (role === 'admin') {
+    redirect('/admin/fnb')
+  } else {
+    redirect('/')
+  }
 }
 
 export async function logout() {
