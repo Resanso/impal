@@ -44,7 +44,7 @@ export default async function AdminFnbPage() {
       {error && (
         <Card className="border-red-200 bg-red-50/50">
           <CardContent className="pt-6">
-            <p className="text-sm text-red-800 font-medium">⚠️ {error}</p>
+            <p className="text-sm text-red-800 font-medium">Peringatan: {error}</p>
           </CardContent>
         </Card>
       )}

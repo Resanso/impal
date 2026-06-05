@@ -111,15 +111,15 @@ export default async function FnbPage() {
       {error && (
         <Card className="border-red-200 bg-red-50 mb-6">
           <CardContent className="pt-6">
-            <p className="text-sm text-red-800">⚠️ {error}</p>
+            <p className="text-sm text-red-800">Peringatan: {error}</p>
           </CardContent>
         </Card>
       )}
 
       {/* List */}
       <div className="space-y-10">
-        {renderCategoryList('🍽️ Makanan Lezat', makanan)}
-        {renderCategoryList('🥤 Minuman Segar', minuman)}
+        {renderCategoryList('Makanan Lezat', makanan)}
+        {renderCategoryList('Minuman Segar', minuman)}
       </div>
     </div>
   )

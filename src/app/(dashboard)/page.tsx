@@ -54,7 +54,7 @@ export default async function DashboardPage() {
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground/90">
-            {greeting}, <span className="text-primary">{user?.email?.split('@')[0]}</span>! 👋
+            {greeting}, <span className="text-primary">{user?.email?.split('@')[0]}</span>!
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Sistem billing biliar cerdas Anda.</p>
         </div>

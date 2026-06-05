@@ -101,8 +101,8 @@ export function FnbList({ items }: FnbListProps) {
 
   return (
     <div className="space-y-8">
-      {renderCategory('🍽️ Makanan', makanan)}
-      {renderCategory('🥤 Minuman', minuman)}
+      {renderCategory('Makanan', makanan)}
+      {renderCategory('Minuman', minuman)}
     </div>
   )
 }
