@@ -18,10 +18,22 @@ export interface AdminBookingRow {
   meja: { id: number; tarif: number } | null
 }
 
+type AdminBookingDbRow = Omit<AdminBookingRow, 'user_email'>
+type AdminMejaDbRow = Omit<AdminMejaRow, 'active_booking'>
+type SupabaseMutationResult<T> = {
+  data: T | null
+  error: { message: string } | null
+}
+
 export interface AdminMejaRow {
   id: number
   tarif: number
   status: 'Tersedia' | 'Terpakai' | 'Maintenance'
+  active_booking: {
+    id: number
+    waktu_mulai: string
+    waktu_selesai: string
+  } | null
 }
 
 async function verifyAdmin() {
@@ -57,7 +69,7 @@ export async function adminGetAllBookings(): Promise<AdminBookingRow[]> {
   if (!bookings) return []
 
   // 2. Fetch all users from Supabase Auth using admin client
-  let userEmailMap = new Map<string, string>()
+  const userEmailMap = new Map<string, string>()
   try {
     const { data: usersData, error: usersError } = await adminSupabase.auth.admin.listUsers()
     if (!usersError && usersData?.users) {
@@ -70,7 +82,8 @@ export async function adminGetAllBookings(): Promise<AdminBookingRow[]> {
   }
 
   // 3. Map bookings to include user email
-  return bookings.map((b: any) => ({
+  const bookingRows = bookings as unknown as AdminBookingDbRow[]
+  return bookingRows.map((b) => ({
     id: b.id,
     user_id: b.user_id,
     user_email: userEmailMap.get(b.user_id) ?? 'Unknown User',
@@ -108,14 +121,47 @@ export async function adminUpdateBookingStatus(
 export async function adminGetAllMeja(): Promise<AdminMejaRow[]> {
   await verifyAdmin()
   const adminSupabase = createAdminClient()
+  const now = new Date().toISOString()
 
-  const { data, error } = await adminSupabase
-    .from('meja')
-    .select('*')
-    .order('id')
+  const [mejaRes, activeBookingRes] = await Promise.all([
+    adminSupabase
+      .from('meja')
+      .select('id, tarif, status')
+      .order('id'),
+    adminSupabase
+      .from('pemesanan')
+      .select('id, meja_id, waktu_mulai, waktu_selesai')
+      .eq('status_pembayaran', 'Lunas')
+      .lte('waktu_mulai', now)
+      .gt('waktu_selesai', now)
+      .order('waktu_selesai', { ascending: true }),
+  ])
 
-  if (error) throw new Error(error.message)
-  return (data as AdminMejaRow[]) ?? []
+  if (mejaRes.error) throw new Error(mejaRes.error.message)
+  if (activeBookingRes.error) throw new Error(activeBookingRes.error.message)
+
+  type ActiveBookingRow = {
+    id: number
+    meja_id: number
+    waktu_mulai: string
+    waktu_selesai: string
+  }
+
+  const activeBookingMap = new Map<number, Omit<ActiveBookingRow, 'meja_id'>>()
+  for (const booking of (activeBookingRes.data ?? []) as ActiveBookingRow[]) {
+    if (!activeBookingMap.has(booking.meja_id)) {
+      activeBookingMap.set(booking.meja_id, {
+        id: booking.id,
+        waktu_mulai: booking.waktu_mulai,
+        waktu_selesai: booking.waktu_selesai,
+      })
+    }
+  }
+
+  return ((mejaRes.data ?? []) as Array<Omit<AdminMejaRow, 'active_booking'>>).map((meja) => ({
+    ...meja,
+    active_booking: activeBookingMap.get(meja.id) ?? null,
+  }))
 }
 
 export async function adminCreateMeja(
@@ -125,17 +171,18 @@ export async function adminCreateMeja(
   await verifyAdmin()
   const adminSupabase = createAdminClient()
 
-  const { data, error } = await adminSupabase
+  const createResult = (await adminSupabase
     .from('meja')
     .insert([{ tarif, status }])
-    .select()
-    .single()
+    .select('id, tarif, status')
+    .single()) as SupabaseMutationResult<AdminMejaDbRow>
 
-  if (error) throw new Error(error.message)
+  if (createResult.error) throw new Error(createResult.error.message)
+  if (!createResult.data) throw new Error('Gagal menyimpan data meja')
   
   revalidatePath('/admin/booking')
   revalidatePath('/booking')
-  return data as AdminMejaRow
+  return { ...createResult.data, active_booking: null }
 }
 
 export async function adminUpdateMeja(
@@ -145,18 +192,19 @@ export async function adminUpdateMeja(
   await verifyAdmin()
   const adminSupabase = createAdminClient()
 
-  const { data, error } = await adminSupabase
+  const updateResult = (await adminSupabase
     .from('meja')
     .update(updates)
     .eq('id', mejaId)
-    .select()
-    .single()
+    .select('id, tarif, status')
+    .single()) as SupabaseMutationResult<AdminMejaDbRow>
 
-  if (error) throw new Error(error.message)
+  if (updateResult.error) throw new Error(updateResult.error.message)
+  if (!updateResult.data) throw new Error('Gagal menyimpan data meja')
   
   revalidatePath('/admin/booking')
   revalidatePath('/booking')
-  return data as AdminMejaRow
+  return { ...updateResult.data, active_booking: null }
 }
 
 export async function adminDeleteMeja(mejaId: number): Promise<{ success: boolean }> {

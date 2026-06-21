@@ -5,6 +5,7 @@ import { CheckCircle2, XCircle, Clock, CalendarDays, Search, User } from 'lucide
 import { Card, CardContent } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
+import { SessionCountdown } from '~/components/session-countdown'
 import { adminUpdateBookingStatus } from '../actions'
 
 interface BookingRow {
@@ -147,6 +148,15 @@ export function BookingList({ initialBookings }: BookingListProps) {
                           </span>
                         </div>
                       </div>
+
+                      {booking.status_pembayaran === 'Lunas' && (
+                        <SessionCountdown
+                          startAt={booking.waktu_mulai}
+                          endAt={booking.waktu_selesai}
+                          compact
+                          className="w-fit"
+                        />
+                      )}
                     </div>
 
                     {/* Pricing & Actions */}

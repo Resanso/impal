@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Clock, CheckCircle, XCircle, ChevronRight } from 'lucide-react'
 import { createClient } from '~/lib/supabase/server'
 import { Card, CardContent } from '~/components/ui/card'
+import { SessionCountdown } from '~/components/session-countdown'
 
 const idr = (n: number) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n)
@@ -73,6 +74,14 @@ export default async function RiwayatPage() {
                         {waktu.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                         {' · '}{booking.durasi} menit
                       </p>
+                      {booking.status_pembayaran === 'Lunas' && (
+                        <SessionCountdown
+                          startAt={booking.waktu_mulai}
+                          endAt={booking.waktu_selesai}
+                          compact
+                          className="mt-2 w-fit"
+                        />
+                      )}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <p className="text-sm font-semibold">{idr(booking.total_tagihan)}</p>

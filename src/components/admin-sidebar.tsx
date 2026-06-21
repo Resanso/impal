@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Coffee, CalendarDays, Layers, LogOut } from 'lucide-react'
+import { Coffee, CalendarDays, Layers, LogOut, LayoutDashboard } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -18,6 +18,7 @@ import { logout } from '~/app/login/actions'
 import { Button } from '~/components/ui/button'
 
 const ADMIN_NAV_ITEMS = [
+  { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/admin/fnb',     icon: Coffee,       label: 'Kelola FNB'          },
   { href: '/admin/booking', icon: CalendarDays,  label: 'Kelola Booking & Meja' },
 ]

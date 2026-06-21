@@ -1,17 +1,16 @@
 -- ============================================================
--- Dummy Data untuk Testing Payment
+-- Dummy Data untuk Testing Booking 6 Jam + Countdown
 -- Jalankan di Supabase SQL Editor
 -- ============================================================
 
--- 1. Tambah meja dummy dengan tarif Rp 1.000/jam
-insert into meja (status, tarif) values ('Tersedia', 1000);
+-- Ganti 'YOUR-USER-UUID' dengan UUID user yang akan dipakai login.
+-- Booking dibuat dengan status 'Lunas' agar countdown langsung tampil di UI.
 
--- 2. Catat ID meja yang baru dibuat (cek dengan: select * from meja order by id desc limit 1)
-
--- 3. Buat pemesanan dummy dengan total Rp 1.000
---    Ganti 'YOUR-USER-UUID' dengan UUID kamu dari:
---    Supabase Dashboard → Authentication → Users → salin UUID-nya
-
+with meja_baru as (
+  insert into meja (status, tarif)
+  values ('Tersedia', 1000)
+  returning id, tarif
+)
 insert into pemesanan (
   user_id,
   meja_id,
@@ -21,23 +20,27 @@ insert into pemesanan (
   status_pembayaran,
   total_tagihan
 )
-values (
-  'YOUR-USER-UUID',                          -- <-- ganti ini
-  (select id from meja order by id desc limit 1),
-  60,
+select
+  'YOUR-USER-UUID',             -- <-- ganti ini
+  id,
+  360,
   now(),
-  now() + interval '1 hour',
-  'Pending',
-  1000
-);
+  now() + interval '6 hours',
+  'Lunas',
+  tarif * 6
+from meja_baru;
 
--- Verifikasi
+-- Verifikasi booking aktif 6 jam
 select
   p.id,
-  p.total_tagihan,
+  p.user_id,
+  p.meja_id,
+  p.durasi,
+  p.waktu_mulai,
+  p.waktu_selesai,
   p.status_pembayaran,
-  m.tarif,
-  p.waktu_mulai
+  p.total_tagihan,
+  m.tarif
 from pemesanan p
 join meja m on m.id = p.meja_id
 order by p.id desc
