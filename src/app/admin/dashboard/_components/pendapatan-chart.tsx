@@ -19,26 +19,30 @@ export function PendapatanChart({ data }: PendapatanChartProps) {
         <h2 className="text-sm font-semibold">Pendapatan 7 Hari Terakhir</h2>
       </CardHeader>
       <CardContent>
-        <div className="flex items-end gap-2 h-40">
-          {data.map((d) => {
-            const height = maxVal > 0 ? (d.total / maxVal) * 100 : 0
-            const day = new Date(d.tanggal).toLocaleDateString('id-ID', { weekday: 'short' })
-            return (
-              <div key={d.tanggal} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-[10px] text-muted-foreground">
-                  {d.total > 0 ? formatRupiah(d.total) : '-'}
-                </span>
-                <div className="w-full flex justify-center">
-                  <div
-                    className="w-full max-w-8 rounded-t bg-primary/80 transition-all"
-                    style={{ height: `${Math.max(height, 4)}%` }}
-                  />
-                </div>
-                <span className="text-[10px] text-muted-foreground font-medium">{day}</span>
-              </div>
-            )
-          })}
-        </div>
+        {(() => {
+          const BAR_AREA_HEIGHT = 128
+          return (
+            <div className="flex items-end gap-2">
+              {data.map((d) => {
+                const barH = maxVal > 0 ? (d.total / maxVal) * BAR_AREA_HEIGHT : 0
+                const [y, m, dd] = d.tanggal.split('-').map(Number)
+                const day = new Date(y!, m! - 1, dd!).toLocaleDateString('id-ID', { weekday: 'short' })
+                return (
+                  <div key={d.tanggal} className="flex-1 flex flex-col items-center gap-1">
+                    <span className="text-[10px] text-muted-foreground">
+                      {d.total > 0 ? formatRupiah(d.total) : '-'}
+                    </span>
+                    <div
+                      className="w-full max-w-8 rounded-t bg-primary/80 transition-all mx-auto"
+                      style={{ height: `${Math.max(barH, 4)}px` }}
+                    />
+                    <span className="text-[10px] text-muted-foreground font-medium">{day}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })()}
       </CardContent>
     </Card>
   )

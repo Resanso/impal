@@ -32,9 +32,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const admin = createAdminClient()
 
   const now = new Date()
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
-  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
-  const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).toISOString()
+  const wibNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }))
+  const todayStart = new Date(Date.UTC(wibNow.getFullYear(), wibNow.getMonth(), wibNow.getDate()) - 7 * 3600000).toISOString()
+  const todayEnd = new Date(Date.UTC(wibNow.getFullYear(), wibNow.getMonth(), wibNow.getDate() + 1) - 7 * 3600000).toISOString()
+  const sevenDaysAgo = new Date(Date.UTC(wibNow.getFullYear(), wibNow.getMonth(), wibNow.getDate() - 6) - 7 * 3600000).toISOString()
 
   // 1. Pendapatan hari ini (pemesanan Lunas)
   const { data: bookingsToday } = await admin
@@ -108,8 +109,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const raw7 = (bookings7Raw ?? []) as { total_tagihan: number; created_at: string }[]
   const pendapatan7Hari: { tanggal: string; total: number }[] = []
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i)
-    const dateStr = d.toISOString().split('T')[0]!
+    const d = new Date(Date.UTC(wibNow.getFullYear(), wibNow.getMonth(), wibNow.getDate() - i) - 7 * 3600000)
+    const dateStr = new Date(d.getTime() + 7 * 3600000).toISOString().split('T')[0]!
     const dayStart = d.toISOString()
     const dayEnd = new Date(d.getTime() + 86400000).toISOString()
     const total = raw7
