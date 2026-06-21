@@ -24,6 +24,11 @@ interface MejaRow {
   id: number
   tarif: number
   status: 'Tersedia' | 'Terpakai' | 'Maintenance'
+  active_booking: {
+    id: number
+    waktu_mulai: string
+    waktu_selesai: string
+  } | null
 }
 
 interface BookingPanelProps {

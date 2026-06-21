@@ -5,12 +5,18 @@ import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { MejaForm } from './meja-form'
 import { adminDeleteMeja } from '../actions'
+import { SessionCountdown } from '~/components/session-countdown'
 import { useTransition } from 'react'
 
 interface MejaRow {
   id: number
   tarif: number
   status: 'Tersedia' | 'Terpakai' | 'Maintenance'
+  active_booking: {
+    id: number
+    waktu_mulai: string
+    waktu_selesai: string
+  } | null
 }
 
 interface MejaListProps {
@@ -39,16 +45,18 @@ export function MejaList({ items }: MejaListProps) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
       {items.map((meja) => {
+        const activeBooking = meja.active_booking
+        const displayStatus = activeBooking ? 'Terpakai' : meja.status
         return (
           <Card key={meja.id} className="border-none ring-1 ring-border/50 shadow-sm hover:shadow-md transition-all">
             <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
               <CardTitle className="text-base font-extrabold">Meja #{meja.id}</CardTitle>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                meja.status === 'Tersedia' ? 'bg-green-100 text-green-800' :
-                meja.status === 'Terpakai' ? 'bg-amber-100 text-amber-800' :
+                displayStatus === 'Tersedia' ? 'bg-green-100 text-green-800' :
+                displayStatus === 'Terpakai' ? 'bg-amber-100 text-amber-800' :
                 'bg-red-100 text-red-800'
               }`}>
-                {meja.status}
+                {displayStatus}
               </span>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -58,6 +66,19 @@ export function MejaList({ items }: MejaListProps) {
                   {idr(meja.tarif)} <span className="text-xs font-normal text-muted-foreground">/ jam</span>
                 </p>
               </div>
+
+              {activeBooking && (
+                <div className="rounded-lg bg-muted/40 p-3">
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Booking #{activeBooking.id}
+                  </p>
+                  <SessionCountdown
+                    startAt={activeBooking.waktu_mulai}
+                    endAt={activeBooking.waktu_selesai}
+                    className="w-fit"
+                  />
+                </div>
+              )}
 
               <div className="flex gap-2 pt-2 border-t">
                 <MejaForm meja={meja} />

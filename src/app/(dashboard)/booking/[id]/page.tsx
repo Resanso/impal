@@ -5,6 +5,7 @@ import { createClient } from '~/lib/supabase/server'
 import { getBookingDetail } from '../actions'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
+import { SessionCountdown } from '~/components/session-countdown'
 
 const idr = (n: number) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n)
@@ -95,6 +96,16 @@ export default async function BookingDetailPage({
                 <span className="text-muted-foreground">Durasi</span>
                 <span className="font-medium">{booking.durasi} menit</span>
               </div>
+              {booking.status_pembayaran === 'Lunas' && (
+                <div className="flex items-center justify-between gap-3 border-t pt-2">
+                  <span className="text-muted-foreground">Countdown meja</span>
+                  <SessionCountdown
+                    startAt={booking.waktu_mulai}
+                    endAt={booking.waktu_selesai}
+                    compact
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
 

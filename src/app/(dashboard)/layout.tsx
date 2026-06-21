@@ -14,13 +14,13 @@ export default async function DashboardLayout({
   if (!user) redirect('/login')
 
   const role = user.user_metadata?.role || 'user'
-  if (role === 'admin') redirect('/admin/fnb')
+  if (role === 'admin') redirect('/admin/dashboard')
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
+      <div className="flex h-svh w-full overflow-hidden">
         <AppSidebar userEmail={user.email ?? ''} />
-        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
+        <main className="h-svh flex-1 overflow-y-auto pb-16 md:pb-0">
           {children}
         </main>
       </div>

@@ -3,6 +3,7 @@ import { CalendarPlus, Clock, CheckCircle, XCircle, ChevronRight, LayoutDashboar
 import { createClient } from '~/lib/supabase/server'
 import { Card, CardContent } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
+import { SessionCountdown } from '~/components/session-countdown'
 
 const idr = (n: number) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n)
@@ -16,6 +17,7 @@ const STATUS_CONFIG = {
 interface BookingRow {
   id: number
   waktu_mulai: string
+  waktu_selesai: string
   durasi: number
   status_pembayaran: string
   total_tagihan: number
@@ -28,7 +30,7 @@ export default async function DashboardPage() {
 
   const { data: bookings } = await supabase
     .from('pemesanan')
-    .select('id, waktu_mulai, durasi, status_pembayaran, total_tagihan, meja:meja_id(id)')
+    .select('id, waktu_mulai, waktu_selesai, durasi, status_pembayaran, total_tagihan, meja:meja_id(id)')
     .eq('user_id', user!.id)
     .order('created_at', { ascending: false })
     .limit(10)
@@ -137,6 +139,14 @@ export default async function DashboardPage() {
                           {waktu.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' })}
                           {' • '}{booking.durasi} menit
                         </p>
+                        {booking.status_pembayaran === 'Lunas' && (
+                          <SessionCountdown
+                            startAt={booking.waktu_mulai}
+                            endAt={booking.waktu_selesai}
+                            compact
+                            className="mt-2 w-fit"
+                          />
+                        )}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <div className="text-right">

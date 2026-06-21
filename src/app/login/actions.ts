@@ -21,7 +21,7 @@ export async function login(formData: FormData) {
   revalidatePath('/', 'layout')
   
   if (role === 'admin') {
-    redirect('/admin/fnb')
+    redirect('/admin/dashboard')
   } else {
     redirect('/')
   }

@@ -21,9 +21,9 @@ export default async function AdminLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
+      <div className="flex h-svh w-full overflow-hidden">
         <AdminSidebar userEmail={user.email ?? ''} />
-        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
+        <main className="h-svh flex-1 overflow-y-auto pb-16 md:pb-0">
           {children}
         </main>
       </div>
